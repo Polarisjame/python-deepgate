@@ -52,7 +52,7 @@ class Trainer():
                 self.local_rank = int(os.environ['LOCAL_RANK'])
             self.device = 'cuda:%d' % self.local_rank
             torch.cuda.set_device(self.local_rank)
-            torch.distributed.init_process_group(backend='nccl', init_method='env://')
+            torch.distributed.init_process_group(backend='gloo', init_method='env://')
             self.world_size = torch.distributed.get_world_size()
             self.rank = torch.distributed.get_rank()
             print('Training in distributed mode. Device {}, Process {:}, total {:}.'.format(

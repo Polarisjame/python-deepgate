@@ -78,6 +78,8 @@ class Model(nn.Module):
         edge_index = G.edge_index
 
         node_state = torch.cat([hs, hf], dim=-1)
+
+        # Tensor:[num_nodes]
         and_mask = G.gate.squeeze(1) == 1
         not_mask = G.gate.squeeze(1) == 2
 
@@ -90,7 +92,7 @@ class Model(nn.Module):
                 l_and_node = G.forward_index[layer_mask & and_mask]
                 if l_and_node.size(0) > 0:
                     and_edge_index, and_edge_attr = subgraph(l_and_node, edge_index, dim=1)
-                    
+                    # 指向l_and_node的所有边的edge_index集合
                     
                     # Update structure hidden state
                     msg = self.aggr_and_strc(hs, and_edge_index, and_edge_attr)

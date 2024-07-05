@@ -3,22 +3,22 @@ import torch
 import numpy
 
 
-
 # see https://github.com/unbounce/pytorch-tree-lstm/blob/66f29a44e98c7332661b57d22501107bcb193f90/treelstm/util.py#L8
 # assume nodes consecutively named starting at 0
 #
+# graph_size: num_nodes
 def top_sort(edge_index, graph_size):
-
     node_ids = numpy.arange(graph_size, dtype=int)
 
-    node_order = numpy.zeros(graph_size, dtype=int)
-    unevaluated_nodes = numpy.ones(graph_size, dtype=bool)
+    node_order = numpy.zeros(graph_size, dtype=int) # store node's topo order
+    unevaluated_nodes = numpy.ones(graph_size, dtype=bool) # is node evaluated
 
+    # edge_index:[2,num_of_edges]
     parent_nodes = edge_index[0]
     child_nodes = edge_index[1]
 
     n = 0
-    while unevaluated_nodes.any():
+    while unevaluated_nodes.any(): # exit unseen nodes
         # Find which parent nodes have not been evaluated
         unevaluated_mask = unevaluated_nodes[parent_nodes]
 
@@ -28,6 +28,7 @@ def top_sort(edge_index, graph_size):
         # Mark nodes that have not yet been evaluated
         # and which are not in the list of children with unevaluated parent nodes
         nodes_to_evaluate = unevaluated_nodes & ~numpy.isin(node_ids, unready_children)
+        # 当前节点未被访问且其两个fanin节点均被访问
 
         node_order[nodes_to_evaluate] = n
         unevaluated_nodes[nodes_to_evaluate] = False
@@ -39,7 +40,6 @@ def top_sort(edge_index, graph_size):
 
 # to be able to use pyg's batch split everything into 1-dim tensors
 def add_order_info_01(graph):
-
     l0 = top_sort(graph.edge_index, graph.num_nodes)
     ei2 = torch.LongTensor([list(graph.edge_index[1]), list(graph.edge_index[0])])
     l1 = top_sort(ei2, graph.num_nodes)
@@ -57,7 +57,7 @@ def add_order_info_01(graph):
 def assert_order(edge_index, o, ns):
     # already processed
     proc = []
-    for i in range(max(o)+1):
+    for i in range(max(o) + 1):
         # nodes in position i in order
         l = o == i
         l = ns[l].tolist()
@@ -77,14 +77,16 @@ def add_order_info(graph):
 
     graph.__setattr__("bi_layer_index", torch.stack([layers, layers2], dim=0))
 
+
+# return forward/backward topo order tensor
 def return_order_info(edge_index, num_nodes):
-    ns = torch.LongTensor([i for i in range(num_nodes)])
-    forward_level = top_sort(edge_index, num_nodes)
+    ns = torch.LongTensor([i for i in range(num_nodes)]) # node_index
+    forward_level = top_sort(edge_index, num_nodes) # return forward topo order tensor [num_nodes]
     ei2 = torch.LongTensor([list(edge_index[1]), list(edge_index[0])])
-    backward_level = top_sort(ei2, num_nodes)
+    backward_level = top_sort(ei2, num_nodes) # return backward topo order tensor
     forward_index = ns
     backward_index = torch.LongTensor([i for i in range(num_nodes)])
-    
+
     return forward_level, forward_index, backward_level, backward_index
 
 
@@ -103,6 +105,7 @@ def subgraph(target_idx, edge_index, edge_attr=None, dim=0):
     else:
         lp_edge_attr = None
     return lp_edge_index, lp_edge_attr
+
 
 def custom_backward_subgraph(l_node, edge_index, device, dim=0):
     '''

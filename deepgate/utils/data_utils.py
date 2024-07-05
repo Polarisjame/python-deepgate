@@ -23,6 +23,7 @@ def write_file(filename, dir, y):
     f.close()
 
 
+# .npz:: numpy的压缩文件
 def read_npz_file(filepath):
     data = np.load(filepath, allow_pickle=True)
     return data

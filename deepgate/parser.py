@@ -67,11 +67,17 @@ class NpzParser():
 
         def download(self):
             pass
-        
+
+        # processes the data to the processed_dir folder
         def process(self):
             data_list = []
             tot_pairs = 0
+            # [num of graph * dict]
+            # each dict:["x":[num_of_nodes, node_embeds], "edge_index":[num_of_edges, 2]]
+            # "x":[3dim, node_index, gate_type, ]
             circuits = read_npz_file(self.circuit_path)['circuits'].item()
+            # [num of graph * dict]
+            # each dict:[labels]
             labels = read_npz_file(self.label_path)['labels'].item()
             
             for cir_idx, cir_name in enumerate(circuits):
@@ -97,7 +103,7 @@ class NpzParser():
                 graph = parse_pyg_mlpgate(
                     x, edge_index, tt_dis, tt_pair_index, 
                     prob, rc_pair_index, is_rc
-                )
+                ) # return pyg.data.Data对象
                 graph.name = cir_name
                 data_list.append(graph)
 

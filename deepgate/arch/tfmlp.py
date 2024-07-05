@@ -31,11 +31,12 @@ class TFMlpAggr(MessagePassing):
     def forward(self, x, edge_index, edge_attr=None, **kwargs):
         # x has shape [N, in_channels]
         # edge_index has shape [2, E]
-
         return self.propagate(edge_index, x=x, edge_attr=edge_attr)
 
     def message(self, x_i, x_j, edge_attr: Optional[Tensor], index: Tensor, ptr: OptTensor, size_i: Optional[int]):
-        # h_i: query, h_j: key 
+        # h_i: query, h_j: key
+        print(x_i, '\n', x_j)
+        print(x_i.size(), x_j.size())
         h_attn_q_i = self.msg_q(x_i)
         h_attn = self.msg_k(x_j)
         # see comment in above self attention why this is done here and not in forward

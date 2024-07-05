@@ -7,6 +7,7 @@ from torch_geometric.data import Data
 from .utils.data_utils import construct_node_feature
 from .utils.dag_utils import return_order_info
 
+
 class OrderedData(Data):
     def __init__(self, edge_index=None, x=None, y=None, \
                  tt_pair_index=None, tt_dis=None, \
@@ -24,7 +25,7 @@ class OrderedData(Data):
         self.backward_index = backward_index
         self.rc_pair_index = rc_pair_index
         self.is_rc = is_rc
-    
+
     def __inc__(self, key, value, *args, **kwargs):
         if 'index' in key or 'face' in key:
             return self.num_nodes
@@ -39,20 +40,21 @@ class OrderedData(Data):
         else:
             return 0
 
+
 def parse_pyg_mlpgate(x, edge_index, tt_dis, tt_pair_index, \
                       y, rc_pair_index, is_rc, \
                       num_gate_types=3):
-    x_torch = construct_node_feature(x, num_gate_types)
+    x_torch = construct_node_feature(x, num_gate_types)  # one-hot gate-type list [num_of_nodes, 3]
 
     tt_pair_index = torch.tensor(tt_pair_index, dtype=torch.long)
-    tt_pair_index = tt_pair_index.t().contiguous()
+    tt_pair_index = tt_pair_index.t().contiguous()  # return a contiguous tensor with same content
     rc_pair_index = torch.tensor(rc_pair_index, dtype=torch.long)
     rc_pair_index = rc_pair_index.t().contiguous()
     tt_dis = torch.tensor(tt_dis)
     is_rc = torch.tensor(is_rc, dtype=torch.float32).unsqueeze(1)
 
     edge_index = torch.tensor(edge_index, dtype=torch.long)
-    
+
     if len(edge_index) == 0:
         edge_index = edge_index.t().contiguous()
         forward_index = torch.LongTensor([i for i in range(len(x))])
@@ -63,10 +65,10 @@ def parse_pyg_mlpgate(x, edge_index, tt_dis, tt_pair_index, \
         edge_index = edge_index.t().contiguous()
         forward_level, forward_index, backward_level, backward_index = return_order_info(edge_index, x_torch.size(0))
 
-    graph = OrderedData(x=x_torch, edge_index=edge_index, 
+    graph = OrderedData(x=x_torch, edge_index=edge_index,
                         rc_pair_index=rc_pair_index, is_rc=is_rc,
-                        tt_pair_index=tt_pair_index, tt_dis=tt_dis, 
-                        forward_level=forward_level, forward_index=forward_index, 
+                        tt_pair_index=tt_pair_index, tt_dis=tt_dis,
+                        forward_level=forward_level, forward_index=forward_index,
                         backward_level=backward_level, backward_index=backward_index)
     graph.use_edge_attr = False
 
@@ -79,4 +81,3 @@ def parse_pyg_mlpgate(x, edge_index, tt_dis, tt_pair_index, \
     graph.prob = torch.tensor(y).reshape((len(x), 1))
 
     return graph
-
